@@ -1,0 +1,1083 @@
+var playNewMessageSound = false;
+var newMessageSound = new Audio( base_url + 'images/message.mp3' );
+
+setTimeout (function(){  //document.addEventListener("DOMContentLoaded", () =>
+    const applicationServerKey = "BHWiQwOO5O4jN3ZY35FwiScxjc-J2jGg-e2hDyMlYo2FRxEQ4jIdMPoWlCHDndf1DU5qvoUqKV_zGeSVRg2jB7A";
+
+    if (!('serviceWorker' in navigator)) {
+        console.warn("Service workers are not supported by this browser");
+        changePushButtonState('incompatible');
+        return;
+    }
+
+    if (!('PushManager' in window)) {
+        console.warn('Push notifications are not supported by this browser');
+        changePushButtonState('incompatible');
+        return;
+    }
+
+    if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
+        console.warn('Notifications are not supported by this browser');
+        changePushButtonState('incompatible');
+        return;
+    }
+
+    // Check the current Notification permission.
+    // If its denied, the button should appears as such, until the user changes the permission manually
+    if (Notification.permission === 'denied') {
+        console.warn('Notifications are denied by the user');
+        changePushButtonState('incompatible');
+        return;
+    }
+
+    navigator.serviceWorker.register("/serviceWorker.js?v=20220310")
+    .then(() => {
+        //console.debug('[SW] Service worker has been registered');
+        push_updateSubscription();
+    }, e => {
+        console.error('[SW] Service worker registration failed', e);
+        changePushButtonState('incompatible');
+    });
+
+    function changePushButtonState (state) {
+        //switch (state) {
+//            case 'enabled':
+//                pushButton.disabled = false;
+//                pushButton.textContent = "Disable Push notifications";
+//                isPushEnabled = true;
+//                break;
+//            case 'disabled':
+//                pushButton.disabled = false;
+//                pushButton.textContent = "Enable Push notifications";
+//                isPushEnabled = false;
+//                break;
+//            case 'computing':
+//                pushButton.disabled = true;
+//                pushButton.textContent = "Loading...";
+//                break;
+//            case 'incompatible':
+//                pushButton.disabled = true;
+//                pushButton.textContent = "Push notifications are not compatible with this browser";
+//                break;
+//            default:
+//                console.error('Unhandled push button state', state);
+//                break;
+//        }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    function push_subscribe() {
+        changePushButtonState('computing');
+
+        navigator.serviceWorker.ready
+        .then(serviceWorkerRegistration => serviceWorkerRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(applicationServerKey),
+        }))
+        .then(subscription => {
+             // Subscription was successful
+            // create subscription on your server
+            return push_sendSubscriptionToServer(subscription, 'POST');
+        })
+        .then(subscription => subscription && changePushButtonState('enabled')) // update your UI
+        .catch(e => {
+            if (Notification.permission === 'denied') {
+                // The user denied the notification permission which
+                // means we failed to subscribe and the user will need
+                // to manually change the notification permission to
+                // subscribe to push messages
+                console.warn('Notifications are denied by the user.');
+                changePushButtonState('incompatible');
+            } else {
+                // A problem occurred with the subscription; common reasons
+                // include network errors or the user skipped the permission
+                console.error('Impossible to subscribe to push notifications', e);
+                changePushButtonState('disabled');
+            }
+        });
+    }
+
+    function push_updateSubscription() {
+        navigator.serviceWorker.ready.then(serviceWorkerRegistration => serviceWorkerRegistration.pushManager.getSubscription())
+        .then(subscription => {
+            changePushButtonState('disabled');
+
+            if (!subscription) {
+                // We aren't subscribed to push, so set UI to allow the user to enable push
+				push_subscribe()
+                return;
+            }
+
+            // Keep your server in sync with the latest endpoint
+            return push_sendSubscriptionToServer(subscription, 'PUT');
+        })
+        .then(subscription => subscription && changePushButtonState('enabled')) // Set your UI to show they have subscribed for push messages
+        .catch(e => {
+            console.error('Error when updating the subscription', e);
+        });
+    }
+
+    function push_unsubscribe() {
+        changePushButtonState('computing');
+
+        // To unsubscribe from push messaging, you need to get the subscription object
+        navigator.serviceWorker.ready
+        .then(serviceWorkerRegistration => serviceWorkerRegistration.pushManager.getSubscription())
+        .then(subscription => {
+            // Check that we have a subscription to unsubscribe
+            if (!subscription) {
+                // No subscription object, so set the state
+                // to allow the user to subscribe to push
+                changePushButtonState('disabled');
+                return;
+            }
+
+            // We have a subscription, unsubscribe
+            // Remove push subscription from server
+            return push_sendSubscriptionToServer(subscription, 'DELETE');
+        })
+        .then(subscription => subscription.unsubscribe())
+        .then(() => changePushButtonState('disabled'))
+        .catch(e => {
+            // We failed to unsubscribe, this can lead to
+            // an unusual state, so  it may be best to remove
+            // the users data from your data store and
+            // inform the user that you have done so
+            console.error('Error when unsubscribing the user', e);
+            changePushButtonState('disabled');
+        });
+    }
+
+    async function push_sendSubscriptionToServer(subscription, method) {
+        const key = subscription.getKey('p256dh');
+        const token = subscription.getKey('auth');
+
+        const response = await fetch('/push/subscribe', {
+            method,
+            credentials: "same-origin",
+            body: JSON.stringify({
+                endpoint: subscription.endpoint,
+                key: key ? btoa(String.fromCharCode.apply(null, new Uint8Array(key))) : null,
+                token: token ? btoa(String.fromCharCode.apply(null, new Uint8Array(token))) : null
+            }),
+        }).then(() => subscription);
+		return response;
+    }
+	setTimeout(function(){
+		if(userId != 'undefined'){
+			const channel = new BroadcastChannel("trunky_user");		
+			channel.postMessage(userId);
+		}
+	},200);
+	makeNewChatButton();
+	
+	
+		 
+}, 100);
+navigator.serviceWorker.addEventListener("message", (event) => {
+	//playNewMessageSound
+  	//console.log(event.data);
+	if(typeof event.data.playSound != 'undefined'){
+		playNewMessageSound = event.data.playSound;
+	}
+});
+
+var pageHasFocus = false;
+/*function checkPageFocus() {
+	let body = document.querySelector('body');
+
+	let hasFocus = document.hasFocus();
+	if (hasFocus != pageHasFocus) {
+		//console.log("focus changed ", hasFocus)
+		pageHasFocus = hasFocus;
+		let broadcast = function(){
+			//let ms = Date.now()
+			//if(pageHasFocus != true){
+			//	ms = ms - 1000;
+			//}
+			//const channel = new BroadcastChannel("trunky_active");		
+			//channel.postMessage({focus:pageHasFocus,time:ms,user:userId});
+			if(userId != 'undefined'){
+				const channel2 = new BroadcastChannel("trunky_user");		
+				channel2.postMessage(userId);
+			}
+		}
+		//if(pageHasFocus != true){
+		//	setTimeout(broadcast,200);
+		//}
+		//else {
+			setTimeout(broadcast,1);
+		//}
+	}
+}*/
+const trunkyActive = new BroadcastChannel("trunky_active");	
+
+trunkyActive.onmessage = function(e) {
+   	console.debug('trunky_active Received', e.data);
+   
+};
+
+
+const trunkyBackground = new BroadcastChannel('trunky_background');
+
+trunkyBackground.onmessage = function(e) {
+   // console.debug('trunky_background Received', e.data);
+    var fn = window[e.data.pushFunc];
+	
+    if(typeof fn === 'function') {
+       // console.log("found function")
+        fn(e.data.pushData);
+    }
+	if(e.data.pushFunc == 'emailMarkRead' || e.data.pushFunc == 'newMailArrived'){
+		if(typeof updateMenuCounts === 'function') {
+			updateMenuCounts();
+		}
+	}
+};
+
+const trunkyProof = new BroadcastChannel('trunky_proof');
+
+trunkyProof.onmessage = function(e) {
+	var trunkyProof
+    if(!$('#trunkyProof').length){
+		$('body').append(trunkyProof = $('<div/>').attr('id','trunkyProof').addClass('trunkyProofHidden').append($('<div/>').attr('id','proofFileInfo')))
+		trunkyProof.on('click', function(){
+			//console.log("clicked proof")
+			if(trunkyProof.hasClass('trunkyProofHidden')){
+				trunkyProof.removeClass('trunkyProofHidden')
+				trunkyProof.height((trunkyProof.find('#proofFileInfo').outerHeight() + 20) + "px")
+			}
+			else {
+				trunkyProof.addClass('trunkyProofHidden')
+				trunkyProof.height('')
+			}
+		});
+	}
+	else{
+		trunkyProof = $('#trunkyProof')
+	}
+	
+	if(e.data.messageType == "files"){
+		trunkyProof.find('#proofFileInfo').html('')
+
+		$.each(e.data.files, function(proofId, proof){
+			var files = proof.files
+			var proofRow = $('<div/>').addClass('proofRow').attr('data-proofId',proofId);
+			proofRow.append($('<div/>').addClass('proofTitle').text('Proof for ' + proof.quoteId))
+			$.each(files, function(fileName, fileDetails){
+				var fileNameIndex = fileName.lastIndexOf("/") + 1;
+				fileName = fileName.substr(fileNameIndex);
+				var fileRow = $('<div/>')
+				fileRow.append($('<div/>').addClass('proofFileName').text(fileName));
+
+				if(fileDetails.pages == "starting"){
+					fileCompletion = 0;
+					fileRow.append($('<div/>').addClass('proofFileCompletion').text("Starting"))
+				}
+				else {
+					fileCompletion = Math.round((fileDetails.currentPage / fileDetails.pages) * 100);
+					if(isNaN(fileCompletion)){
+						fileCompletion = 0;
+					}
+					fileRow.append($('<div/>').addClass('proofFileCompletion').text(fileCompletion + "%").append(
+						$('<div/>').addClass('fileCompletionBar').width(fileCompletion + "%").append($('<span/>').text(fileCompletion + "%"))
+					))
+				}
+				proofRow.append(fileRow);
+
+			})
+			trunkyProof.find('#proofFileInfo').append(proofRow);
+		})
+		if(!trunkyProof.hasClass('trunkyProofHidden')){	
+			trunkyProof.height((trunkyProof.find('#proofFileInfo').outerHeight() + 20) + "px")
+		}
+		$('footer').css('margin-bottom',($('#trunkyProof').height()-20) + 'px')
+	}
+	else if(e.data.messageType == "complete"){
+		$('.proofRow[data-proofId="' + e.data.proofid + '"] .proofTitle').append(' - COMPLETE')
+		setTimeout(function(){
+			$('.proofRow[data-proofId="' + e.data.proofid + '"]').slideUp(1000, function(){
+				if(!trunkyProof.find('.proofRow:visible').length){
+					trunkyProof.remove()
+					$('footer').css('margin-bottom','')
+					if(typeof getProofsSent == "function"){
+						getProofsSent()
+					}
+				}
+			});
+		},5000)
+	}
+};
+
+var existingMsgCheck = true;
+var userList = {}
+var previousDate = 0;
+
+var sendNotification = body => {
+	// you could refresh a notification badge here with postMessage API
+	//console.log(body);
+	var msg = JSON.parse(body);
+	const title = msg.title;
+	const msgbody = msg.message;
+	if(typeof msg.message == "undefined" || msg.message == "") {
+		return;
+	}
+	body = msgbody;
+	var data = "https://" + self.location.hostname + "/";
+	var icon = data + "logo.png?v=20240105";
+	if(typeof msg.icon != "undefined") {
+		icon = msg.icon;
+	}
+	if(typeof msg.link != "undefined") {
+		data = msg.link;
+	}
+	//var requireInteraction = true;
+
+	return self.registration.showNotification(title, {
+		body,icon, data, //requireInteraction
+	});
+};
+
+function messengerArrived(msgData){
+	$.get(base_url + 'messenger/getMsg/' + msgData.message_id, function(fullMsgData){
+
+		if($('.messengerBody[data-receivers="' + fullMsgData.message_receivers + '"]').length){
+			if(Cookies.get('incomingMessageMinimised') != 'true'){
+				$('.messengerBody[data-receivers="' + fullMsgData.message_receivers + '"]').removeClass('minimised');
+			}
+			else if($('.messengerBody[data-receivers="' + fullMsgData.message_receivers + '"]').hasClass('minimised')){
+				$('.messengerBody[data-receivers="' + fullMsgData.message_receivers + '"]').addClass('hasUnreadMessage')
+				let unreadMessageIds = Cookies.get('unreadMessageIds');
+				if(typeof unreadMessageIds == 'undefined'){
+					unreadMessageIds = {};
+					unreadMessageIds[fullMsgData.message_receivers] = fullMsgData.message_receivers
+					Cookies.set('unreadMessageIds',JSON.stringify(unreadMessageIds)); 
+				}
+				else{
+					unreadMessageIds = JSON.parse(unreadMessageIds);
+					unreadMessageIds[fullMsgData.message_receivers] = fullMsgData.message_receivers;
+					Cookies.set('unreadMessageIds',JSON.stringify(unreadMessageIds)); 
+				}
+			}
+			$('.messengerBody[data-receivers="' + fullMsgData.message_receivers + '"]').find('.messages').animate({scrollTop: $('.messengerBody[data-receivers="' + fullMsgData.message_receivers + '"]').find('.messages').prop('scrollHeight')},0);
+		}
+		messengerAddMsg(fullMsgData)
+		if(playNewMessageSound == true && Cookies.get('playNewMessageSound') == 'true' && fullMsgData.message_sender != userId){
+			//console.log('should play sound now')
+			newMessageSound.play();
+		}
+	} )
+	
+}
+
+function messengerMinimise(msgData){
+	$('.messengerBody[data-receivers="' + msgData.message_receivers + '"]').addClass('minimised')
+}
+
+function messengerUnminimise(msgData){
+	$('.messengerBody[data-receivers="' + msgData.message_receivers + '"]').removeClass('minimised').removeClass('hasUnreadMessage')
+	$('.messengerBody[data-receivers="' + msgData.message_receivers + '"]').find('.messages').animate({scrollTop: $('.messengerBody[data-receivers="' + msgData.message_receivers + '"]').find('.messages').prop('scrollHeight')},0);
+	let unreadMessageIds = Cookies.get('unreadMessageIds');
+	if(typeof unreadMessageIds != 'undefined'){
+		unreadMessageIds = JSON.parse(unreadMessageIds)
+		delete unreadMessageIds[msgData.message_receivers]; 
+		Cookies.set('unreadMessageIds',JSON.stringify(unreadMessageIds)); 
+	}
+}
+
+function messengerAddMsg(msgData){
+	if(typeof isIframe == 'undefined' || isIframe){
+		return;
+	}
+	//{"message_sender":"1","message_text":"test message"}
+	if(!$('.messengerBody[data-receivers="' + msgData.message_receivers + '"]').length){
+		var receiverdIds = msgData.message_receivers.split(',');
+		var receiverNames = ''
+		
+		$.each(receiverdIds,function(index, id){
+			if(id != userId){
+				if(typeof userList[id] == 'undefined'){
+					getUserList();
+				}
+				if(receiverdIds.length > 2){
+					receiverNames = receiverNames + '<img src="' + base_url + 'images/users/' + id + '.svg" class="smallUserIcon" title="' + userList[id].name + '">';
+				}
+				else {
+					receiverNames = receiverNames + ' ' + userList[id].name;
+				}
+				
+			}
+		})
+		//console.log(Cookies.get('incomingMessageMinimised'))
+		if(Cookies.get('incomingMessageMinimised') == 'true'){
+			makeMessageBox(msgData.message_receivers,receiverNames,false)
+		}
+		else {
+			makeMessageBox(msgData.message_receivers,receiverNames)
+		}
+		
+	}
+	else
+	{
+		if(!$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages .messageLine[data-messageid="' + msgData.message_id + '"]').length){
+			var message = $('<div/>').addClass('messageWrap')
+			if(isEmoji(msgData.message_text)){
+				message.addClass('emoji')
+			}
+			
+			//console.log(new Date(msgData.message_time.replace(" ","T")).getTime(),previousDate)
+			
+			if(typeof userList[msgData.message_sender] == 'undefined'){
+				getUserList();
+			}
+			message.attr('title',userList[msgData.message_sender].name + " @ " + mysqlToHumanDate(msgData.message_time));
+			
+			if(msgData.message_receivers.split(',').length > 2){
+				message.append($('<div/>').addClass('messageDate').text(userList[msgData.message_sender].name + ' - ' + mysqlToHumanDate(msgData.message_time)))
+			}
+			else {
+				if(new Date(msgData.message_time.replace(" ","T")).getTime() - previousDate > 600000){
+					message.append($('<div/>').addClass('messageDate').text(mysqlToHumanDate(msgData.message_time)))
+				}
+			}
+			
+			previousDate = new Date(msgData.message_time.replace(" ","T")).getTime()
+			message.append($('<div/>').addClass('messageText').html($.parseHTML(nl2br (msgData.message_text))))
+			var messageLine = $('<div/>').addClass('messageLine').attr('data-messageid',msgData.message_id).append(message)
+			if(msgData.message_sender != userId){
+				messageLine.addClass('someoneElse');
+			}
+			//console.log(msgData.message_receivers.split(',').length)
+			if(msgData.message_receivers.split(',').length > 2){ 
+				if(msgData.message_sender != userId){
+					messageLine.prepend($('<img/>').attr('src', base_url + 'images/users/' + msgData.message_sender + '.svg').addClass('smallUserIcon'). attr('title', userList[msgData.message_sender].name))
+				}
+			}
+			
+			messageLine.find('a').each(function(index, linkElm){
+			if(isImage($(linkElm).attr('href'))){
+				let linkUrl = $(linkElm).attr('href')
+				let imgElm = $('<img/>').attr('src',linkUrl).attr('crossorigin',"anonymous").attr('referrerpolicy',"no-referrer").attr('href',base_url + 'messenger/previewImage?img=' + linkUrl).addClass('msgImg').on('load', function(){
+					$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').animate({scrollTop: $('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').prop('scrollHeight')})
+				})
+				imgElm.on('click',  function(linkClickEvent){
+					linkClick(linkClickEvent,'messageImagePreview');
+				})
+				$(linkElm).replaceWith(imgElm)
+			}})
+			
+			if(typeof msgData.tempid  != "undefined"){
+			  $('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').find('.messageLine.temp[data-messageid="' + msgData.tempid + '"]').remove()
+			}
+			
+			if(typeof msgData.temp != "undefined"){
+				messageLine.addClass('temp')
+			}
+		
+			if(msgData.message_id < $('.messengerBody[data-receivers="' + msgData.message_receivers + '"].messages .messageLine:last-child()').data('messageid')){
+				$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').prepend(messageLine)
+				$('.messengerBody[data-receivers="' + msgData.message_receivers + '"]').data('lastMessageId',msgData.message_id)
+			}
+			else {
+				$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').append(messageLine)
+				$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').scrollTo(messageLine)
+			}
+			//console.log(messageLine)
+			//$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').append(messageLine)
+			
+			//$('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').animate({scrollTop: $('.messengerBody[data-receivers="' + msgData.message_receivers + '"] .messages').prop('scrollHeight')},0);
+		}
+	}
+}
+
+function replaceUrlWithImg(){
+	$('.messageWrap a').each(function(index, linkElm){
+		if(isImage($(linkElm).attr('href'))){
+		   	let linkUrl = $(linkElm).attr('href');
+			let imgElm = $('<img/>').attr('src',linkUrl).addClass('msgImg')
+			$(linkElm).replaceWith(imgElm)
+		}
+	})
+}
+
+const urlify = (text) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, (url) => {
+    return `<a href="${url}" rel="noreferrer">${url}</a>`;
+  })
+}
+
+function makeMessageBox(ids, name, focus){
+	return;
+	if(typeof focus == 'undefined'){
+		focus = false;
+	}
+	//console.log(focus)
+	if(typeof ids != 'object'){
+		ids = ids.split(/,\s*/).sort(function(a,b){ return parseFloat(a) - parseFloat(b)}).join(",")
+	}
+	//console.log(ids)
+	if(!$('.messengerBody[data-receivers="' + ids + '"]').length){
+		var msgBox = $('<div/>').addClass('messengerBody').attr('data-receivers',ids); //.addClass('minimised')
+		if(!focus){
+			msgBox.addClass('minimised')
+		}
+		msgBox.append(
+			$('<div/>').addClass('messengerHeader')
+			.append($('<div/>').addClass('minimiseChat').html(name).on('click',minimiseChat))
+			.append($('<div/>').addClass('closeChat').append($('<img/>').attr('src',base_url + 'images/chat/close.svg')).on('click',closeChat)))
+		msgBox.append($('<div/>').addClass('messages'))
+		
+		var linkSend = $('<img/>').attr('src',base_url + 'images/chat/link.svg').addClass('linkSend').on('click',sendLinkMessage)
+		var msgSend = $('<img/>').attr('src',base_url + 'images/chat/send.svg').addClass('msgSend').on('click',sendMessageReply)
+		
+		var msgInput
+		
+		if(true){ //userId == 1
+			//msgInput = $('<div/>').addClass('msgReply').attr('contenteditable','true')
+			msgInput = $('<textarea/>').attr('rows',1).addClass('msgReply')
+			msgInput.on("input",function(event){
+				this.style.height = 'auto';
+				this.style.overflow = 'hidden';
+				this.style.resize = 'none';
+ 
+				this.style.height =
+					(this.scrollHeight) + 'px';
+			});
+		}
+		else {
+			msgInput = $('<input/>').addClass('msgReply')
+		}
+		
+		msgInput.keypress(function(event){
+			
+			var keycode = (event.keyCode ? event.keyCode : event.which);
+			//console.log(keycode)
+			if(keycode == '13' && !event.shiftKey){
+				msgSend.trigger('click')
+				return false;
+			}
+		});
+		
+		
+		msgInput.pasteImageReader(function(results) {
+			filename = results.name, 
+			dataURL = results.dataURL;
+			size = results.size;
+			ext = results.ext;
+			thisIsImage = results.thisIsImage
+			if(size > 10485760){
+				addNotice('File Too Big',"error");
+				return;
+			}
+			addNotice('Uploading Images / File',"ok");
+			$.post(base_url + 'messenger/uploadInlineImage',{filename:filename,image:dataURL}, function(response){
+				if(response != false){
+					msgInput.val(base_url + response)
+					if(!thisIsImage){
+						msgInput.attr('data-sendasis',filename);
+						msgInput.val(base_url + response)
+						msgSend.trigger('click')
+					}
+					else {
+						msgSend.trigger('click')
+					}
+					
+				}
+			},'json');
+		});
+		
+		msgBox.append($('<div/>').addClass('messagesReplyBox').append(msgInput).append(linkSend).append(msgSend))
+		
+		if(!$('.messengerWrapper').length && !isIframe){
+			$('body').append($('<div/>').addClass('messengerWrapper'))
+		}
+		
+		$('.messengerWrapper').append(msgBox)
+		//$.post(base_url + 'messenger/unminimise',{receiver:ids}, function(response){});
+		
+		if(focus){
+			setTimeout(function(){
+				msgInput.focus();
+				//minimiseChat({target:msgBox.find('.messagesReplyBox')})	
+			},100);
+		}
+		getMessages(ids)
+	}
+}
+
+function sendLinkMessage(clickEvent){
+	//console.log('link clicked',$(clickEvent.target).siblings('.msgReply'))
+	$(clickEvent.target).siblings('.msgReply').val(window.location.href);
+	sendMessageReply(clickEvent)
+}
+
+function sendMessageReply(clickEvent){
+	var receiver = $(clickEvent.target).parents('.messengerBody').attr('data-receivers')
+	var message
+	var sendAsIs = false
+	if($(clickEvent.target).siblings('.msgReply').is('input') || $(clickEvent.target).siblings('.msgReply').is('textarea')){
+		message = $(clickEvent.target).siblings('.msgReply').val();
+		$(clickEvent.target).siblings('.msgReply').val('')
+		$(clickEvent.target).siblings('.msgReply').height("19px");
+		if(typeof $(clickEvent.target).siblings('.msgReply').attr('data-sendasis') != 'undefined'){
+			sendAsIs = $(clickEvent.target).siblings('.msgReply').attr('data-sendasis');
+		}
+		$(clickEvent.target).siblings('.msgReply').removeAttr('data-sendasis')
+	}
+	else {
+		message = $(clickEvent.target).siblings('.msgReply').html();
+		$(clickEvent.target).siblings('.msgReply').html('')
+		$(clickEvent.target).siblings('.msgReply').height("19px");
+		if(typeof $(clickEvent.target).siblings('.msgReply').attr('data-sendasis') != 'undefined'){
+			sendAsIs = $(clickEvent.target).siblings('.msgReply').attr('data-sendasis');
+		}
+		$(clickEvent.target).siblings('.msgReply').removeAttr('data-sendasis')
+	}
+	//console.log(message);
+	if(message.trim() == ""){
+		return;
+	}
+	var tempMessageId = Date.now();
+	
+	var msgData = {message_id:tempMessageId,message_receivers:receiver,message_text:message,message_sender:userId,message_time:new Date().toISOString(),temp:true}
+	const urlRegex = /(https?:\/\/[^\s]+)/g;
+	if(!sendAsIs){
+		msgData.message_text = message.replace(urlRegex, '<a href="$1" target="_blank" rel="nofollow">$1</a>')
+	}
+	else {
+		msgData.message_text = message.replace(urlRegex, '<a href="$1" target="_blank" rel="nofollow" download="' + sendAsIs + '">' + sendAsIs + '</a>')
+		message = msgData.message_text;
+	}
+	messengerAddMsg(msgData)
+	
+	let unreadMessageIds = Cookies.get('unreadMessageIds');
+	if(typeof unreadMessageIds != 'undefined'){
+		unreadMessageIds = JSON.parse(unreadMessageIds)
+		delete unreadMessageIds[receiver]; 
+		Cookies.set('unreadMessageIds',JSON.stringify(unreadMessageIds)); 
+	}
+	
+	$.post(base_url + 'messenger/send',{receiver:receiver,text:message,tempid:tempMessageId}, function(response){
+		if(response !== false){
+			const urlRegex = /(https?:\/\/[^\s]+)/g;
+			var messageId = response.msgId;
+			var msgData = {message_id:messageId,message_receivers:receiver,message_text:message,message_sender:userId,message_time:new Date().toISOString(),tempid:tempMessageId}
+			if(!sendAsIs){
+		
+				msgData.message_text = message.replace(urlRegex, '<a href="$1" target="_blank" rel="nofollow">$1</a>')
+			}
+			else {
+				//msgData.message_text = message.replace(urlRegex, '<a href="$1" target="_blank" rel="nofollow" download="' + sendAsIs + '">' + sendAsIs + '</a>')
+			}
+			
+			messengerAddMsg(msgData)
+		}
+	},'json')
+}
+
+function closeChat(clickEvent){
+	var receiver = $(clickEvent.target).parents('.messengerBody').attr('data-receivers')
+	$(clickEvent.target).parents('.messengerBody').remove();
+	$.post(base_url + 'messenger/close',{receiver:receiver}, function(response){
+	},'json');
+}
+
+function messengerClose(message){
+	$('.messengerBody[data-receivers="' + message.message_receivers + '"]').remove()
+}
+
+function minimiseChat(clickEvent){
+	var receiver = $(clickEvent.target).parents('.messengerBody').attr('data-receivers')
+	
+	if($(clickEvent.target).parents('.messengerBody').hasClass('minimised')){
+		$(clickEvent.target).parents('.messengerBody').removeClass('minimised');
+		$(clickEvent.target).parents('.messengerBody').find('.messages').animate({scrollTop: $(clickEvent.target).parents('.messengerBody').find('.messages').prop('scrollHeight')},0);
+		$.post(base_url + 'messenger/unminimise',{receiver:receiver}, function(response){
+	//		$(clickEvent.target).parents('.messengerBody').removeClass('minimised');
+	//		$(clickEvent.target).parents('.messengerBody').find('.messages').animate({scrollTop: $(clickEvent.target).parents('.messengerBody').find('.messages').prop('scrollHeight')},0);
+		},'json');
+		$(clickEvent.target).parents('.messengerBody').find('.msgReply').focus();
+	}
+	else{
+		$(clickEvent.target).parents('.messengerBody').addClass('minimised');
+		$.post(base_url + 'messenger/minimise',{receiver:receiver}, function(response){
+	//		$(clickEvent.target).parents('.messengerBody').addClass('minimised');
+		},'json');
+		
+	}
+}
+
+function getMessages(users){
+	var data = {};
+	var firstMessageId = false;
+	var currentLast = $('.messengerBody[data-receivers="' + users + '"]').find('.messageLine').first().data('messageid');
+	
+	//console.log(currentLast)
+	if(typeof $('.messengerBody[data-receivers="' + users + '"]').data('lastMessageId') != 'undefined'){
+		data['last_id'] = $('.messengerBody[data-receivers="' + users + '"]').data('lastMessageId')
+	}
+	$('.messengerBody[data-receivers="' + users + '"]').find('.loadMoreMessages').remove()
+	$.post(base_url + 'messenger/get/' + encodeURIComponent(users), data, function(response){
+		$.each(response, function(messageIndex, message){
+			//console.log('line 612 ', Cookies.get('incomingMessageMinimised') != 'true')
+			if(Cookies.get('incomingMessageMinimised') != 'true'){
+				message.message_minimised = ','+message.message_minimised+','
+				//console.log(message.message_minimised,message.message_minimised.indexOf(','+userId+','))
+				if(message.message_minimised.indexOf(','+userId+',') < 0){
+					$('.messengerBody[data-receivers="' + message.message_receivers + '"]').removeClass('minimised')
+				}
+			}
+			else {
+				let unreadMessageIds = Cookies.get('unreadMessageIds');
+				if(typeof unreadMessageIds != 'undefined'){
+				
+					unreadMessageIds = JSON.parse(unreadMessageIds);
+					if(typeof unreadMessageIds[message.message_receivers] != 'undefined'){
+						$('.messengerBody[data-receivers="' + message.message_receivers + '"]').addClass('hasUnreadMessage')
+					}
+				}
+			}
+			messengerAddMsg(message)
+			if(firstMessageId === false){
+				firstMessageId = message.message_id
+			}
+		})
+	},'json')
+	setTimeout(function(){
+		$('.messengerBody[data-receivers="' + users + '"]').data('lastMessageId',firstMessageId)
+		$('.messengerBody[data-receivers="' + users + '"]').find('.messages').prepend($('<span/>').addClass('loadMoreMessages').text('Load More').on('click', function(){
+			getMessages(users)
+		}))
+		
+	},500);
+	setTimeout(function(){
+		//console.log(currentLast)
+		if(typeof currentLast != 'undefined'){
+			$('.messengerBody[data-receivers="' + users + '"] .messages').scrollTo($('.messengerBody[data-receivers="' + users + '"] .messages .messageLine[data-messageid="' + currentLast +'"]'))
+			//$('.messengerBody[data-receivers="' + '1,2' + '"] .messages').scrollTo($('.messengerBody[data-receivers="' + '1,2' + '"] .messages .messageLine[data-messageid="' + 15512 +'"]'));
+			//$('.messengerBody[data-receivers="' + users + '"] .messages').animate({scrollTop: $('.messengerBody[data-receivers="' + users + '"] .messages .messageLine[data-messageid="' + currentLast +'"]').offsetParent().offset().top},0);
+		}
+		
+	},2500);
+}
+
+function checkMessages(closed){
+	$.get(base_url + 'messenger/check', function(response){
+		$.each(response, function(messageIndex, message){
+		//	console.log($('.messengerBody[data-receivers="' + message.message_receivers + '"]').length)
+			if(!$('.messengerBody[data-receivers="' + message.message_receivers + '"]').length){
+			//	getMessages(message.message_receivers)
+				messengerAddMsg(message)
+			}
+			//var msgData = {message_receivers:message.message_receivers,message_text:message.message_text,message_sender_name:message.sender_fullname,message_sender:message.message_sender}
+//			messengerAddMsg(message)
+		})
+		existingMsgCheck = false;
+	},'json')
+}
+
+function getUserList(){
+	$.get(base_url + 'messenger/userlist', function(response){
+		userList = response;
+	},'json')
+}
+
+var newChatButton 
+function makeNewChatButton(){
+	if($("body").hasClass('popup')){
+		return;
+	}
+	function startNewChat(clickEvent){
+		existingMsgCheck = false;
+		var userIdsInMsg = [$(clickEvent.target).attr('data-userid'), userId]
+		userIdsInMsg.sort()
+		makeMessageBox(userIdsInMsg.join(','), $(clickEvent.target).text(), true)
+		existingMsgCheck = true;
+		$('.newChatUsers').hide();
+	}
+	$.get(base_url + 'messenger/userlist', function(response){
+		let workingList = {}
+		if(typeof Object.values(response)[0] != "string"){
+			userList = {}
+			$.each(response, function(userIdItr,userDetailItr){
+				userList[userIdItr] = {name:userDetailItr.name,sort:userDetailItr.sort}
+				workingList[userIdItr] = userDetailItr;
+			})
+			workingList = response
+		}
+		else {
+			userList = response;
+			$.each(userList, function(newUserId,userName){
+				workingList[newUserId] = {'name':userName,'sort':0}
+			})
+		}
+		
+		var newChatUsers = $('<div/>').addClass('newChatUsers')
+
+	
+		$.each(workingList, function(newUserId,userDetails){
+			let userName = userDetails.name
+			let userSort = userDetails.sort
+			if(newUserId != userId){
+				$(newChatUsers).append($('<div/>').addClass('newChatUser').attr('data-userid',newUserId).attr('data-sort',userSort).text(userName).on('click',startNewChat))
+			}
+		})
+		
+		if(!$('.messengerWrapper').length && !isIframe){
+			//$('body').append($('<div/>').addClass('messengerWrapper'))
+		}
+		newChatButton = $('<div/>').addClass('newChatButton').append($('<img/>').attr('src',base_url + 'images/chat/send.svg')).on('click', function(){
+			$(newChatUsers).toggle();
+			setTimeout(function(){
+				$(newChatUsers).hide();
+			},8000)
+		})
+		
+		let rightClickMenu = $('<ul>').addClass('chatContectMenu').hide()
+			.append($('<li>').text('Minimise All').on('click', function(){
+				//$('.messengerBody').addClass('minimised')
+				$('.messengerBody').each(function(index, element){
+					if(!$(element).hasClass('minimised')){
+						$(element).find('.minimiseChat').trigger('click')
+					}
+				});
+				$(".chatContectMenu").hide();
+			}))
+			.append($('<li>').text('Close All').on('click', function(){
+				$('.closeChat').trigger('click')
+				$(".chatContectMenu").hide();
+			}))
+			.append($('<li>').text('Start Group Chat').on('click', function(){
+				selectGroupChatUsers();
+				$('.newChatUsers').hide();
+				$(".chatContectMenu").hide();
+			}))
+		
+		newChatButton.bind("contextmenu", function (event) {
+			//console.log("right clicked")
+			// Avoid the real one
+			event.preventDefault();
+			//console.log(event.pageX,event.pageY, $(".chatContectMenu").height())
+			// Show contextmenu
+			$(".chatContectMenu").toggle().
+
+			// In the right position (the mouse)
+			css({
+				bottom: "60px",
+				left: event.pageX + "px"
+			});
+		});
+
+
+		// If the document is clicked somewhere
+		$(document).bind("mousedown", function (e) {
+
+			// If the clicked element is not the menu
+			if (!$(e.target).parents(".chatContectMenu").length > 0) {
+
+				// Hide it
+				$(".chatContectMenu").hide();
+			}
+		});
+
+		
+		$('.messengerWrapper').append($('<div/>').addClass('newChat').append(newChatButton).append(newChatUsers.hide())).append(rightClickMenu)
+		
+		let newChatUsersDiv = $('.newChatUsers').children().clone(true)
+		newChatUsersDiv.sort(function(a, b){
+			return $(b).attr("data-sort")-$(a).attr("data-sort")
+		});
+		$('.newChatUsers').html('')
+		$('.newChatUsers').append(newChatUsersDiv)
+		
+		checkMessages();
+	},'json')
+	// Trigger action when the contexmenu is about to be shown
+}
+
+function selectGroupChatUsers(){
+	if(typeof passthroughData == 'undefined'){
+		passthroughData = [];
+	}
+	
+	let windowCover = $('<div/>').addClass('customerContactIframeWrapper');
+	let userSelectArea =  $('<div/>').addClass('invoiceDetailsIframe userSelectArea');
+	windowCover.append(userSelectArea);
+	windowCover.on('click', function(clickEvent){
+		if($(clickEvent.target).hasClass('customerContactIframeWrapper')){
+			$(this).remove();
+		}
+	})
+
+	$.get(base_url + 'messenger/getGroupChats', function(users){
+		$.each(users.userList, function(thisUserId, user){
+			//console.log(user)
+
+			if(userId == thisUserId){
+				return;
+			}
+			let userElement = $('<div/>').addClass('userSelectElement').data('userid',thisUserId).on('click', function(selectedUserElement){
+				
+				//if($(selectedUserElement.target).hasClass('userSelectElement')){
+//					thisUserId = $(selectedUserElement.target).data('userid');
+//				}
+//				else {
+//					thisUserId = $(selectedUserElement.target).parents('.userSelectElement').data('userid');
+//				}
+//				passthroughData.requestFrom = thisUserId;
+				//window[callback](passthroughData);
+				//windowCover.remove();
+				
+				userElement.toggleClass('selectedUser');
+			})
+
+			userElement.append($('<img/>').attr('src', base_url + 'images/users/' + thisUserId + '.svg'));
+			userElement.append($('<span/>').text(user));
+			userSelectArea.append(userElement)
+		})
+		$.each(users.groupChats, function(junk, groupChat){
+			//console.log(groupChat)
+			var receiverNames = ''
+			receiverdIds = groupChat.split(',');
+			//console.log(receiverdIds)
+			$.each(receiverdIds,function(index, id){
+				if(id != userId){
+					if(typeof userList[id] == 'undefined'){
+						getUserList();
+					}
+					if(typeof userList[id] != "undefined"){
+						if(groupChat.length > 2){
+							receiverNames = receiverNames + '<img src="' + base_url + 'images/users/' + id + '.svg" class="smallUserIcon" title="' + userList[id].name + '">';
+						}
+						else {
+							receiverNames = receiverNames + ' ' + userList[id].name;
+						}
+					}
+				}
+			})
+			let userElement = $('<div/>').addClass('groupChatSelectElement userSelectElement').data('chatUsers',groupChat).on('click', function(selectedUserElement){
+				
+				makeMessageBox(groupChat,receiverNames,true)
+				$(windowCover).remove();
+			})
+
+			userElement.append(receiverNames);
+			//userElement.append($('<span/>').text(user));
+			userSelectArea.append(userElement)
+		})
+		userSelectArea.append($('<div/>').addClass('startGroupChat').on('click', function(){
+			let chatUserList =[userId];
+			$(windowCover).find('.userSelectElement.selectedUser').each(function(elementIndex, selectedUserElement){
+				chatUserList.push($(selectedUserElement).data('userid'));
+			})
+		
+
+			var receiverNames = ''
+
+			$.each(chatUserList,function(index, id){
+				if(id != userId){
+					if(typeof userList[id] == 'undefined'){
+						getUserList();
+					}
+					if(chatUserList.length > 2){
+						receiverNames = receiverNames + '<img src="' + base_url + 'images/users/' + id + '.svg" class="smallUserIcon" title="' + userList[id].name + '">';
+					}
+					else {
+						receiverNames = receiverNames + ' ' + userList[id].name;
+					}
+				}
+			})
+		
+			makeMessageBox(chatUserList,receiverNames,true)
+			$(windowCover).remove();
+		}).text('Start Chat'))
+		$('body').append(windowCover)
+		//window[callback](data);
+	},'json')
+}
+
+(function($) {
+	var defaults;
+	$.event.fix = (function(originalFix) {
+		return function(event) {
+			event = originalFix.apply(this, arguments);
+			if (event.type.indexOf("copy") === 0 || event.type.indexOf("paste") === 0) {
+				event.clipboardData = event.originalEvent.clipboardData;
+			}
+			return event;
+		};
+	})($.event.fix);
+	defaults = {
+		callback: $.noop,
+		matchType: /image.*/
+	};
+	return ($.fn.pasteImageReader = function(options) {
+		if (typeof options === "function") {
+			options = {
+				callback: options
+			};
+		}
+		options = $.extend({}, defaults, options);
+		return this.each(function() {
+			var $this, element;
+			element = this;
+			$this = $(this);
+			return $this.bind("paste", function(event) {
+				var clipboardData, found;
+				found = false;
+				clipboardData = event.clipboardData;
+				return Array.prototype.forEach.call(clipboardData.types, function(type, i) {
+					var file, reader;
+					if (found) {
+						return;
+					}
+					if (true
+						//type.match(options.matchType) ||
+//						clipboardData.items[i].type.match(options.matchType)
+					) {
+						let thisIsImage = (type.match(options.matchType) || clipboardData.items[i].type.match(options.matchType))
+						file = clipboardData.items[i].getAsFile();
+						reader = new FileReader();
+						reader.onload = function(evt) {
+							return options.callback.call(element, {
+								dataURL: evt.target.result,
+								event: evt,
+								orgevent:event,
+								file: file,
+								size: file.size,
+								ext: file.name.split('.').pop(),
+								name: file.name,
+								isimage:thisIsImage
+							});
+						};
+						if(file != null){
+							reader.readAsDataURL(file);
+							return (found = true);
+						}
+						return (found = false);
+					}
+				});
+			});
+		});
+	});
+})(jQuery);
+
+jQuery.fn.scrollTo = function(elem) { 
+    $(this).scrollTop($(this).scrollTop() - $(this).offset().top + $(elem).offset().top); 
+    return this; 
+};

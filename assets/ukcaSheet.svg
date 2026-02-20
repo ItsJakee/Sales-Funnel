@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">
+  <defs>
+    <style>
+      .cls-1 {
+        fill-rule: evenodd;
+      }
+    </style>
+  </defs>
+  <g id="UKCA">
+    <path id="U" class="cls-1" d="M.5.5v7.5c0,1.93,1.57,3.5,3.5,3.5h4c1.93,0,3.5-1.57,3.5-3.5V.5h-2.5v7.5c0,.55-.45,1-1,1h-4c-.55,0-1-.45-1-1V.5H.5Z"/>
+    <path id="K" class="cls-1" d="M13.5.5v11h2.5v-4l5,4h3.5l-7-5.5L24.5.5h-3.5l-5,4V.5h-2.5Z"/>
+    <path id="C" class="cls-1" d="M11.5,13.5v2.5h-7.5c-.55,0-1,.45-1,1v4c0,.55.45,1,1,1h7.5v2.5h-7.5c-1.93,0-3.5-1.57-3.5-3.5v-4c0-1.93,1.57-3.5,3.5-3.5h7.5Z"/>
+    <path id="A" class="cls-1" d="M13.5,24.5v-7.5c0-1.93,1.57-3.5,3.5-3.5h4c1.93,0,3.5,1.57,3.5,3.5h0v7.5h-2.5v-2.5h-6v2.5h-2.5ZM16,19.5h6v-2.5c0-.55-.45-1-1-1h-4c-.55,0-1,.45-1,1v2.5Z"/>
+  </g>
+</svg>

@@ -1,0 +1,95 @@
+:root {
+	--text-color: #000000;
+	--link-color: #225aed;
+	--nav-width: 150px;
+	--nav-width-mini: 36px;
+	--main-top-offset: 55px;
+	--green-colour: #7EC346;  /*#6BAA38;*/
+	--grey-colour: #9D9D9C;
+	--lightgrey-colour: #EEEEEE;
+	--background-colour: #FFFFFF;
+	--purple-colour: #56266e;
+	--white-text-on-purple: #ffffff;
+	--lightgreen-hover-colour: #EEFFEE;
+	--lightgrey-hover-colour: #DBEDDB;
+	--complaint-button-colour: #DC0000;
+	--complaint-button-text-colour: #FFFFFF;
+	--quotecustomer-button-lighter-colour: #b855bd;
+	--quotecustomer-button-colour: #740377;
+	--quotecustomer-button-text-colour: #FFFFFF;
+	--addsample-button-lighter-colour: #80d5d5;
+	--addsample-button-colour: #1EADAD;
+	--addsample-button-text-colour: #FFFFFF;
+	--addenquiry-button-colour: #E2762D ;
+	--addenquiry-button-text-colour: #FFFFFF;
+	--addenquirylight-button-colour: #f39e65;
+	--addenquirylight-button-text-colour: #000;
+	--active-note-color: var(--green-colour);
+	--inactive-note-color: #EEEEEE;
+	--chat-me-bg: #9affff;
+	--chat-other-bg: #9eff9e;
+	--chat-text: #000000;
+	--chat-header: #ffffff;
+	--scroll-bar-colour: #0002;
+	--notice-ok-bg: green;
+	--notice-ok-text: #ffffff;
+	--notice-error-bg: red;
+	--notice-error-text: #ffffff;
+    
+    --pinned: #FFAEB0;
+    --lightgrey-white-colour: #fff; 
+	
+    --heading-color: #7EC346;
+    --active-color: red;
+    --ppc-red: #D7263D; 
+    --red-important: #ff0000;
+    --green-button: rgba(126,195,70,0.85);
+    --mine-text: red;
+	--red-button-lighter: #e5604e;
+	--red-button: firebrick;
+	--white-text: #ffffff;
+    --black-text: #000;
+    --taskButton: #ffc300;
+    --important: yellow;
+    --text-on-green: #000;
+    
+    --logo-colour: #722f90;
+	
+	--unpaid-noDate-bg: linear-gradient(90deg, rgb(161,236,253) 0%, #f2cf13 100%);
+	--unpaid-noDate-even-bg: linear-gradient(90deg, rgba(161,236,253,0.8) 0%, rgba(242,207,19,0.80) 100%);
+	--unpaid-bg: #f2cf13;
+	--unpaid-even-bg: rgba(242,207,19,0.80);
+	--no-date-bg: rgb(161,236,253);
+	--no-date-even-bg: rgba(161,236,253,0.8) ;
+	--isEmergency-bg: #59589e ;
+	--isEmergency-even-bg: rgba(89,88,158,0.80);
+	
+	--isEmergency-late-bg: linear-gradient(90deg, #d62839 20%, #59589e 100%);
+	--isEmergency-late-even-bg: linear-gradient(90deg, rgba(214,40,57,0.80) 0%, rgba(89,88,158,0.80) 100%);
+	--isEmergency-1day-bg: linear-gradient(90deg, #9c6744 20%, #592e83 100%);
+	--isEmergency-1day-even-bg: linear-gradient(90deg, rgba(156,103,68,0.80) 20%, rgba(89,88,158,0.80) 100%);
+	--isEmergency-0day-bg: linear-gradient(90deg, #f68820 20%, #59589e 100%);
+	--isEmergency-0day-even-bg: linear-gradient(90deg, rgba(246,136,32,0.80) 20%, rgba(89,88,158,0.80) 100%);
+	--days-remaining-0-bg: #f68820;
+	--days-remaining-0-even-bg: rgba(246,136,32,0.80);
+	--days-remaining-1-bg: #9c6744;
+	--days-remaining-1-even-bg: rgba(156,103,68,0.80);
+	--days-remaining-late-bg: #d62839;
+	--days-remaining-late-even-bg: rgba(214,40,57,0.80);
+	
+	--cclist-recorded-bg: rgba(255,208,138,1.00);
+	--cclist-recorded-even-bg: rgba(255,208,138,0.75);
+	--cclist-courior-bg: rgba(102,153,255,1.00);
+	--cclist-courior-even-bg: rgba(102,204,255,1.00);
+	
+	--project-member-bg: #bff7ac;
+	--project-lead-bg:#3c8ed5;
+	
+	--followup-due-bg: #c4e5c4;
+	--followup-due-even-bg: #abe7ab;
+	
+	--svg-fill: #000;
+}
+.svgColor, .emailSubject svg path {
+    fill: #000;
+}
