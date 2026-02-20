@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<!-- IVORY SALES FUNNEL — ACTION LANE MOCKUP v1 -->
+<html><head lang="en">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Sales Funnel — Action Lanes (Mockup)</title>
+<link rel="icon" type="image/svg+xml" href="./Project Overview Trunky_files/Logo.svg">
+<link rel="stylesheet" type="text/css" href="./Project Overview Trunky_files/Montserrat.css">
+<link href="./Project Overview Trunky_files/basic.css" rel="stylesheet">
+<link href="./Project Overview Trunky_files/light.css" rel="stylesheet" media="screen">
+
+<style>
+/* ── LAYOUT ────────────────────────────────────────────────── */
+.funnelWrap { padding: 15px 20px 60px; }
+
+/* ── DATE QUICK BAR ─────────────────────────────────────────── */
+.dateQuickBar {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 22px; flex-wrap: wrap;
+}
+.dateQuickBar label { font-style: italic; font-size: 14px; margin-right: 4px; }
+.dateQuickBtn {
+    padding: 5px 14px; border-radius: 4px;
+    border: 1px solid var(--grey-colour);
+    cursor: pointer; font-family: montserrat; font-size: 13px;
+    background: var(--background-colour); transition: background 0.15s;
+}
+.dateQuickBtn:hover { background: var(--lightgrey-colour); }
+.dateQuickBtn.active {
+    background: var(--green-colour); border-color: var(--green-colour);
+    color: #fff; font-weight: bold;
+}
+.customDateWrap { display: none; align-items: center; gap: 6px; }
+.customDateWrap.visible { display: flex; }
+.customDateWrap input {
+    padding: 4px 8px; border: 1px solid var(--grey-colour);
+    border-radius: 4px; font-family: montserrat; font-size: 13px;
+}
+
+/* ── KPI TILES ──────────────────────────────────────────────── */
+.kpiRow {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-bottom: 24px;
+}
+.kpiTile {
+    border-radius: 6px; padding: 14px 18px;
+    display: flex; flex-direction: column; gap: 5px;
+    position: relative; overflow: hidden;
+}
+.kpiTile .kpiNum  { font-size: 30px; font-weight: bold; line-height: 1; }
+.kpiTile .kpiLabel { font-size: 12px; opacity: 0.9; line-height: 1.3; }
+.kpi-orange { background: #E2762D; color: #fff; }
+.kpi-purple { background: #d72b0d; color: #fff; } /* Fire Red */
+.kpi-teal   { background: #1EADAD; color: #fff; }
+.kpi-cold   { background: #cce9f9; color: #2c5875; }
+
+/* ── LANE ACCORDION ─────────────────────────────────────────── */
+.lane {
+    margin-bottom: 8px; border-radius: 6px;
+    overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.13);
+}
+.laneHeader {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 24px; cursor: pointer; user-select: none;
+    font-size: 20px; font-weight: bold;
+}
+.laneHeader:hover { filter: brightness(0.95); }
+.laneChevron { margin-left: auto; font-size: 22px; transition: transform 0.2s; flex-shrink: 0; }
+.lane.open .laneChevron { transform: rotate(180deg); }
+.laneBadge {
+    background: rgba(255,255,255,0.3); border-radius: 20px;
+    padding: 4px 14px; font-size: 16px; font-weight: bold;
+    min-width: 36px; text-align: center; flex-shrink: 0;
+}
+.laneUrgency { font-size: 12px; font-weight: normal; opacity: 0.82; }
+
+.laneBody { display: none; background: var(--background-colour); }
+.lane.open .laneBody { display: block; }
+
+/* Lane colours */
+.lane-orange .laneHeader { background: #E2762D; color: #fff; }
+.lane-purple .laneHeader { background: #d72b0d; color: #fff; } /* Fire Red */
+.lane-teal   .laneHeader { background: #1EADAD; color: #fff; }
+.lane-pink   .laneHeader { background: #e84090; color: #fff; }
+.lane-cold   .laneHeader { background: #cce9f9; color: #2c5875; }
+.lane-green  .laneHeader { background: var(--green-colour); color: #fff; } /* White text for contrast */
+
+/* ── LANE TABLE ─────────────────────────────────────────────── */
+.laneTable { width: 100%; border-collapse: collapse; }
+.laneTable th {
+    background: #d9d9d9; padding: 6px 14px;
+    text-align: left; font-size: 13px; font-weight: bold;
+    border-bottom: 1px solid #bbb; white-space: nowrap;
+}
+.laneTable th.centre, .laneTable td.centre { text-align: center; }
+.laneRow {
+    border-bottom: 1px solid var(--lightgrey-colour);
+    transition: background 0.1s;
+}
+.laneRow:last-child { border-bottom: none; }
+.laneRow:hover { background: var(--lightgreen-hover-colour); }
+.laneRow td { padding: 8px 14px; vertical-align: middle; font-size: 13px; }
+
+.projectLink {
+    color: var(--link-color); text-decoration: none;
+    font-weight: bold; white-space: nowrap;
+}
+.projectLink:hover { text-decoration: underline; }
+.clientName    { color: var(--text-color); white-space: nowrap; }
+.priceCell     { white-space: nowrap; font-weight: bold; }
+.priceHighlight { color: #DC0000; }
+
+/* Days urgency */
+.days-ok   { color: #2a8a2a; font-weight: bold; }
+.days-warn { color: #b86a00; font-weight: bold; }
+.days-bad  { color: #DC0000; font-weight: bold; }
+
+/* ── ROW ACTION BUTTONS ─────────────────────────────────────── */
+.rowActions { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.rowBtn {
+    border: none; border-radius: 4px; cursor: pointer;
+    padding: 5px 7px; display: inline-flex;
+    align-items: center; justify-content: center;
+    transition: filter 0.15s; font-family: montserrat;
+}
+.rowBtn img { width: 20px; height: 20px; display: block; }
+.rowBtn svg { width: 20px; height: 20px; display: block; }
+.rowBtn:hover { filter: brightness(0.82); }
+.btn-email { background: #e0eeff; }
+.btn-call  { background: #e8f8e8; }
+.btn-tick  { background: var(--green-colour); }
+.btn-skull { background: var(--lightgrey-colour); }
+.btn-won   { background: #d0f4f0; }
+
+.handlerAvatar {
+    width: 22px; height: 22px; border-radius: 11px;
+    border: 1px solid var(--grey-colour);
+}
+
+/* Overdue badge */
+.overdueBadge {
+    background: #DC0000; color: #fff; border-radius: 3px;
+    font-size: 10px; padding: 1px 5px; font-weight: bold;
+    vertical-align: middle; margin-left: 4px;
+}
+
+/* ── PIPELINE LANE ──────────────────────────────────────────── */
+.pipelineToggle {
+    display: flex; background: #fff;
+    border-bottom: 1px solid var(--grey-colour);
+}
+.pipelineTab {
+    padding: 9px 22px; cursor: pointer; font-size: 13px;
+    font-weight: bold; border-bottom: 3px solid transparent;
+    transition: border-color 0.15s; color: var(--grey-colour);
+}
+.pipelineTab.active { border-bottom-color: var(--green-colour); color: var(--text-color); }
+
+.pipelineViewPanel { display: none; }
+.pipelineViewPanel.active { display: block; }
+
+.monthGroupHeader {
+    background: #f4f4f4; padding: 7px 16px;
+    font-weight: bold; font-size: 13px;
+    border-bottom: 1px solid #ddd; border-top: 1px solid #ddd;
+}
+
+/* Pipeline ticked-by icon */
+.tickedByIcon {
+    width: 24px; height: 24px; border-radius: 12px;
+    border: 2px solid var(--green-colour); vertical-align: middle;
+}
+
+/* ── FORECAST TABLE ─────────────────────────────────────────── */
+.forecastTable { width: 100%; border-collapse: collapse; }
+.forecastTable th {
+    background: #d9d9d9; padding: 8px 18px; text-align: left;
+    font-size: 13px; font-weight: bold; border-bottom: 1px solid #bbb;
+}
+.forecastTable th.right, .forecastTable td.right { text-align: right; }
+.forecastTable td {
+    padding: 10px 18px; border-bottom: 1px solid var(--lightgrey-colour);
+    font-size: 13px;
+}
+.forecastTable tr:last-child td { border-bottom: none; }
+.forecastTotalRow td { font-weight: bold; background: #f0fae8; }
+.weightedValue { color: #2a8a2a; font-weight: bold; }
+.forecastNote {
+    font-size: 11px; color: var(--grey-colour);
+    padding: 10px 18px 14px; line-height: 1.7;
+}
+
+/* ── TICK MODAL ─────────────────────────────────────────────── */
+.modalOverlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,.48); z-index: 10000;
+    align-items: center; justify-content: center;
+}
+.modalOverlay.open { display: flex; }
+.modalBox {
+    background: var(--background-colour); border-radius: 8px;
+    padding: 26px 30px; min-width: 390px; max-width: 520px; width: 90%;
+    box-shadow: 0 8px 36px rgba(0,0,0,.28); position: relative;
+}
+.modalBox h3 { margin-bottom: 4px; font-size: 16px; }
+.modalProjectName { color: var(--grey-colour); font-size: 12px; margin-bottom: 16px; }
+.modalBox label { display: block; font-size: 13px; margin-bottom: 4px; font-weight: bold; }
+.modalBox input[type="date"],
+.modalBox textarea {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid var(--grey-colour); border-radius: 4px;
+    padding: 7px 10px; font-family: montserrat; font-size: 13px;
+    margin-bottom: 14px;
+}
+.modalBox textarea { min-height: 72px; resize: vertical; }
+.modalActions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+.modalBtn {
+    padding: 8px 22px; border: none; border-radius: 4px;
+    cursor: pointer; font-family: montserrat; font-size: 13px; font-weight: bold;
+}
+.modalBtn-confirm { background: var(--green-colour); color: #fff; }
+.modalBtn-cancel  { background: var(--lightgrey-colour); color: #000; }
+.modalClose {
+    position: absolute; top: 12px; right: 14px; cursor: pointer;
+    font-size: 20px; color: var(--grey-colour); background: none; border: none;
+    line-height: 1;
+}
+
+/* Quick-pick presets */
+.notePresets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.notePreset {
+    padding: 4px 11px; border: 1px solid var(--grey-colour);
+    border-radius: 20px; font-size: 12px; cursor: pointer; background: #fff;
+    transition: background 0.12s, border-color 0.12s;
+}
+.notePreset:hover, .notePreset.selected {
+    background: var(--green-colour); color: #fff;
+    border-color: var(--green-colour);
+}
+
+/* Pipeline lane summary in header */
+.pipelineSummary {
+    font-size: 12px; font-weight: normal; opacity: 0.82;
+}
+.pipelineSummary strong { font-weight: bold; opacity: 1; }
+
+/* Section divider label */
+.sectionLabel {
+    font-size: 12px; font-weight: bold; color: var(--grey-colour);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 18px 0 6px;
+}
+</style>
+</head>
+
+<body data-view="customerprojects/project_list" class="lightMode" cz-shortcut-listen="true">
+
+<!-- ══════════ HEADER ══════════ -->
+<header>
+  <headerinner>
+    <div class="button addTask" onclick="alert('Task system — existing functionality')"
+         style="background-color:var(--taskButton);color:var(--text-on-green);margin-right:10px;">
+      <span class="addTaskHeaderDesktopOnly">+ Task</span>
+    </div>
+    <a class="button createAccount"
+       style="margin-right:10px;background-color:var(--green-button);color:var(--text-on-green);">
+      <span class="createAccountHeaderDesktopOnly">+ Customer</span>
+    </a>
+    <a class="button addQuoteRequestHeader"
+       style="background-color:var(--addenquiry-button-colour);color:var(--addenquiry-button-text-colour);">
+      <span class="addQuoteRequestHeaderDesktopOnly">+ Enquiry</span>
+    </a>
+    <input type="search" placeholder="Customer" style="margin:0 5px;">
+    <input type="number" placeholder="Quote"
+           style="margin:0 5px;width:80px;-moz-appearance:textfield;">
+    <div class="editSelfButton">
+      <img src="./Project Overview Trunky_files/2.svg"
+           style="width:30px;height:30px;border-radius:15px;border:1px solid var(--grey-colour);">
+    </div>
+  </headerinner>
+</header>
+
+<!-- ══════════ NAV ══════════ -->
+<nav style="display:block;">
+  <div id="navClock" class="fullMenuItem">
+    <span class="time" id="clockTime">10:00:00</span>
+    <span class="date">20/02/26</span>
+  </div>
+  <img class="trunkyLogo" src="./Project Overview Trunky_files/Logo.svg">
+  <div class="menuCollapse fullMenuItem"><img src="./Project Overview Trunky_files/backburger.svg"></div>
+  <a href="#" class="fullMenuItem homeButton">Home</a>
+  <a class="fullMenuItem menuSortItem customerprojects-index" href="#"
+     style="font-weight:bold;color:var(--green-colour);">Sales Funnel</a>
+  <a class="fullMenuItem menuSortItem" href="#">Tasks</a>
+  <a class="fullMenuItem menuSortItem" href="#">Q Requests</a>
+  <a class="fullMenuItem menuSortItem" href="#">Q Reviews</a>
+  <a class="fullMenuItem menuSortItem" href="#">Kit Requests</a>
+  <div class="menuSortItem menuSpacer"></div>
+  <a class="fullMenuItem menuSortItem" href="#">Artwork</a>
+  <a class="fullMenuItem menuSortItem" href="#">Production</a>
+  <a class="fullMenuItem menuSortItem" href="#">Samples</a>
+  <div class="menuSortItem menuSpacer"></div>
+  <a class="fullMenuItem menuSortItem" href="#">Invoices</a>
+  <a class="fullMenuItem menuSortItem" href="#">Reports</a>
+</nav>
+
+<!-- ══════════ MAIN ══════════ -->
+<main>
+<div class="funnelWrap">
+
+  <h1 style="margin:12px 0 18px;">Sales Funnel</h1>
+
+  <!-- ── DATE QUICK BAR ── -->
+  <div class="dateQuickBar">
+    <label>Showing from last:</label>
+    <button class="dateQuickBtn" onclick="setRange(this,3)">3 days</button>
+    <button class="dateQuickBtn" onclick="setRange(this,7)">7 days</button>
+    <button class="dateQuickBtn" onclick="setRange(this,14)">14 days</button>
+    <button class="dateQuickBtn active" onclick="setRange(this,30)">30 days</button>
+    <button class="dateQuickBtn" onclick="setRange(this,60)">60 days</button>
+    <button class="dateQuickBtn" onclick="setRange(this,90)">90 days</button>
+    <button class="dateQuickBtn" onclick="setRangeCustom(this)">Custom…</button>
+    <div class="customDateWrap" id="customDateWrap">
+      <input type="date" value="2025-12-01"> to
+      <input type="date" value="2026-02-20">
+      <button class="dateQuickBtn"
+              style="background:var(--green-colour);color:#fff;border-color:var(--green-colour);">Apply</button>
+    </div>
+  </div>
+
+  <!-- ── KPI TILES ── -->
+  <div class="kpiRow">
+    <div class="kpiTile kpi-orange">
+      <span class="kpiNum">3</span>
+      <span class="kpiLabel">Unseen Quotes</span>
+    </div>
+    <div class="kpiTile kpi-purple">
+      <span class="kpiNum">4</span>
+      <span class="kpiLabel">Hot Prospects (4+ views)</span>
+    </div>
+    <div class="kpiTile kpi-teal">
+      <span class="kpiNum">5</span>
+      <span class="kpiLabel">Samples Needing Chase</span>
+    </div>
+    <div class="kpiTile kpi-cold">
+      <span class="kpiNum">2</span>
+      <span class="kpiLabel">Going Cold (30+ days)</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       ACTION LANES
+  ════════════════════════════════════════════════ -->
+  <div class="sectionLabel">Action Lanes</div>
+
+  <!-- ── LANE 1: UNSEEN QUOTES ── -->
+  <div class="lane lane-orange open" id="lane-unseen">
+    <div class="laneHeader" onclick="toggleLane('lane-unseen')">
+      <svg style="width:24px;height:24px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A9,9 0 0,0 3,11C3,14.03 4.53,16.7 6.9,18.2L6,22L9,20.5L12,22L15,20.5L18,22L17.1,18.2C19.47,16.7 21,14.03 21,11A9,9 0 0,0 12,2M9,7A2,2 0 0,1 11,9A2,2 0 0,1 9,11A2,2 0 0,1 7,9A2,2 0 0,1 9,7M15,7A2,2 0 0,1 17,9A2,2 0 0,1 15,11A2,2 0 0,1 13,9A2,2 0 0,1 15,7Z"/></svg>
+      <span>Unseen Quotes</span>
+      <span class="laneBadge">3</span>
+      <span class="laneUrgency">Quote sent &gt;3 days ago · 0 views · no contact logged</span>
+      <span class="laneChevron">▾</span>
+    </div>
+    <div class="laneBody">
+      <table class="laneTable">
+        <thead><tr>
+          <th>Project</th><th>Client</th><th></th>
+          <th class="centre">Avg Price</th><th class="centre">Sent</th>
+          <th class="centre">Actions</th>
+        </tr></thead>
+        <tbody>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Transition Cards</a></td>
+            <td class="clientName">The Childcare Guide</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£1,615</td>
+            <td class="centre days-bad">5 days ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Transition Cards — The Childcare Guide')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">NMC Platinum</a></td>
+            <td class="clientName">Northern Magic Circle</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£580</td>
+            <td class="centre days-warn">4 days ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('NMC Platinum — Northern Magic Circle')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Custom Cards</a></td>
+            <td class="clientName">Lisa Justice</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/41.svg" title="Rob"></td>
+            <td class="centre priceCell">£962</td>
+            <td class="centre days-warn">3 days ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Custom Cards — Lisa Justice')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /lane-unseen -->
+
+  <!-- ── LANE 2: HOT QUOTES ── -->
+  <div class="lane lane-purple open" id="lane-hot">
+    <div class="laneHeader" onclick="toggleLane('lane-hot')">
+      <svg style="width:20px;height:20px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="currentColor" d="M17.66,11.2C17.43,10.9 17.15,10.64 16.89,10.38C16.22,9.78 15.46,9.35 14.82,8.72C13.33,7.26 13,4.85 13.95,3C13,3.23 12.17,3.75 11.46,4.32C8.87,6.4 7.85,10.07 9.07,13.22C9.11,13.32 9.15,13.42 9.15,13.55C9.15,13.77 9,13.97 8.8,14.05C8.57,14.15 8.33,14.09 8.14,13.93C8.08,13.88 8.04,13.83 8,13.76C6.87,12.33 6.69,10.28 7.45,8.64C5.78,10 4.87,12.3 5,14.47C5.06,14.97 5.12,15.47 5.29,15.97C5.43,16.57 5.7,17.17 6,17.7C7.08,19.43 8.95,20.67 10.96,20.92C13.1,21.19 15.39,20.8 17.03,19.31C18.86,17.62 19.5,15 18.56,12.72L18.43,12.46C18.22,12 17.66,11.2 17.66,11.2Z"/></svg>
+      <span>Hot Quotes</span>
+      <span class="laneBadge">4</span>
+      <span class="laneUrgency">Viewed 4+ times · no contact logged since quote sent · probably comparing prices</span>
+      <span class="laneChevron">▾</span>
+    </div>
+    <div class="laneBody">
+      <table class="laneTable">
+        <thead><tr>
+          <th>Project</th><th>Client</th><th></th>
+          <th class="centre">Avg Price</th><th class="centre">Views</th>
+          <th class="centre">Last Contact</th><th class="centre">Actions</th>
+        </tr></thead>
+        <tbody>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Light</a></td>
+            <td class="clientName">Precious Twigs</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£911</td>
+            <td class="centre days-bad" title="Viewed 6 times — high intent">⚡ 6</td>
+            <td class="centre days-warn">9 days ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Light — Precious Twigs')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Messages From Loved Ones In Spirit</a></td>
+            <td class="clientName">Jenna Davis</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/41.svg" title="Rob"></td>
+            <td class="centre priceCell">£1,547</td>
+            <td class="centre days-bad">⚡ 5</td>
+            <td class="centre days-ok">1 day ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Messages From Loved Ones In Spirit — Jenna Davis')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Broadwick Soho Playing Cards</a></td>
+            <td class="clientName">Broadwick Street Holdings</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/41.svg" title="Rob"></td>
+            <td class="centre priceCell">£2,415</td>
+            <td class="centre days-warn">⚡ 4</td>
+            <td class="centre days-ok">2 days ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Broadwick Soho Playing Cards')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Sacred Embrace Oracle Deck</a></td>
+            <td class="clientName">Aleisha Miller</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£1,010</td>
+            <td class="centre days-warn">⚡ 4</td>
+            <td class="centre days-ok">3 days ago</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Sacred Embrace Oracle Deck — Aleisha Miller')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /lane-hot -->
+
+  <!-- ── LANE 3: SAMPLE KIT SENT ── -->
+  <div class="lane lane-teal open" id="lane-kit">
+    <div class="laneHeader" onclick="toggleLane('lane-kit')">
+      <svg style="width:20px;height:20px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="currentColor" d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L10.11,5.22L16,8.61L17.96,7.5L12,4.15M6.04,7.5L12,10.85L13.96,9.75L8.08,6.35L6.04,7.5M5,15.91L11,19.29V12.58L5,9.21V15.91M19,15.91V9.21L13,12.58V19.29L19,15.91Z"/></svg>
+      <span>Sample Kit Sent</span>
+      <span class="laneBadge">3</span>
+      <span class="laneUrgency">Kit dispatched &gt;3 days ago · no contact logged since dispatch</span>
+      <span class="laneChevron">▾</span>
+    </div>
+    <div class="laneBody">
+      <table class="laneTable">
+        <thead><tr>
+          <th>Project</th><th>Client</th><th></th>
+          <th class="centre">Avg Price</th><th class="centre">Kit Sent</th>
+          <th class="centre">No Contact For</th><th class="centre">Actions</th>
+        </tr></thead>
+        <tbody>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Oblique Dramaturgies</a></td>
+            <td class="clientName">Anthony Dean</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£1,207</td>
+            <td class="centre days-ok">4 days ago</td>
+            <td class="centre days-ok">4 days</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Oblique Dramaturgies — Anthony Dean')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">4 Designs</a></td>
+            <td class="clientName">Wendy Jackson</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/41.svg" title="Rob"></td>
+            <td class="centre priceCell">£963</td>
+            <td class="centre days-warn">13 days ago</td>
+            <td class="centre days-warn">13 days</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('4 Designs — Wendy Jackson')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow" style="background:#fff8f8;">
+            <td><a class="projectLink" href="#">Dr Beecham</a></td>
+            <td class="clientName">Card Couture Ltd</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/41.svg" title="Rob"></td>
+            <td class="centre priceCell">£1,067</td>
+            <td class="centre days-bad">~60 days ago</td>
+            <td class="centre days-bad">7 days <span class="overdueBadge">OVERDUE</span></td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Dr Beecham — Card Couture Ltd')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /lane-kit -->
+
+  <!-- ── LANE 4: TEST PACK SENT ── -->
+  <div class="lane lane-pink open" id="lane-testpack">
+    <div class="laneHeader" onclick="toggleLane('lane-testpack')">
+      <svg style="width:24px;height:24px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="currentColor" d="M7 2h10v3h-2v11c0 2.21-1.79 4-4 4s-4-1.79-4-4V5H7V2zm4 6v8h2V8h-2z"/></svg>
+      <span>Test Pack Sent</span>
+      <span class="laneBadge">2</span>
+      <span class="laneUrgency">Printed prototype dispatched &gt;2 days ago · no contact logged since dispatch</span>
+      <span class="laneChevron">▾</span>
+    </div>
+    <div class="laneBody">
+      <table class="laneTable">
+        <thead><tr>
+          <th>Project</th><th>Client</th><th></th>
+          <th class="centre">Avg Price</th><th class="centre">Pack Sent</th>
+          <th class="centre">No Contact For</th><th class="centre">Actions</th>
+        </tr></thead>
+        <tbody>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">Douchebag</a></td>
+            <td class="clientName">Dan Norris</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell priceHighlight">£10,228</td>
+            <td class="centre days-ok">5 days ago</td>
+            <td class="centre days-ok">2 days</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Douchebag — Dan Norris')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow">
+            <td><a class="projectLink" href="#">W G Fitness Cards</a></td>
+            <td class="clientName">William George</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£1,036</td>
+            <td class="centre days-warn">12 days ago</td>
+            <td class="centre days-warn">10 days</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('W G Fitness Cards — William George')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /lane-testpack -->
+
+  <!-- ── LANE 5: GOING COLD ── -->
+  <div class="lane lane-cold" id="lane-cold">
+    <div class="laneHeader" onclick="toggleLane('lane-cold')">
+      <svg style="width:24px;height:24px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2L12.5,4L13,2.5L15,2L14.5,4L16.5,4.5L16,6.5L15.5,5L13.5,5.5L13,7L11,6.5L11.5,4.5L9.5,4L10,2L12,2M12,22L11.5,20L11,21.5L9,22L9.5,20L7.5,19.5L8,17.5L8.5,19L10.5,18.5L11,17L13,17.5L12.5,19.5L14.5,20L14,22L12,22M22,12L20,12.5L21.5,13L22,15L20,14.5L19.5,16.5L17.5,16L19,15.5L18.5,13.5L17,13L17.5,11L19.5,11.5L20,9.5L22,10L22,12M2,12L4,11.5L2.5,11L2,9L4,9.5L4.5,7.5L6.5,8L5,8.5L5.5,10.5L7,11L6.5,13L4.5,12.5L4,14.5L2,14L2,12M12,5.5L13.5,9H17.5L14.5,12L15.5,16L12,13.5L8.5,16L9.5,12L6.5,9H10.5L12,5.5Z"/></svg>
+      <span>Going Cold</span>
+      <span class="laneBadge">2</span>
+      <span class="laneUrgency">No contact logged for 30+ days · save it or close it</span>
+      <span class="laneChevron">▾</span>
+    </div>
+    <div class="laneBody">
+      <table class="laneTable">
+        <thead><tr>
+          <th>Project</th><th>Client</th><th></th>
+          <th class="centre">Avg Price</th><th class="centre">Stage</th>
+          <th class="centre">Last Contact</th><th class="centre">Actions</th>
+        </tr></thead>
+        <tbody>
+
+          <tr class="laneRow" style="background:#fff5f5;">
+            <td><a class="projectLink" href="#">Feng Shui</a></td>
+            <td class="clientName">Steph Hemsted-Williams</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/41.svg" title="Rob"></td>
+            <td class="centre priceCell">£726</td>
+            <td class="centre" style="font-size:12px;color:#555;">Quote Viewed</td>
+            <td class="centre days-bad">431 days <span class="overdueBadge">!</span></td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Feng Shui — Steph Hemsted-Williams')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+          <tr class="laneRow" style="background:#fff5f5;">
+            <td><a class="projectLink" href="#">Bridge Career Drivers</a></td>
+            <td class="clientName">Learning Technologies Group</td>
+            <td><img class="handlerAvatar" src="./Project Overview Trunky_files/2.svg" title="Mel"></td>
+            <td class="centre priceCell">£1,344</td>
+            <td class="centre" style="font-size:12px;color:#555;">Quote Sent</td>
+            <td class="centre days-bad">38 days</td>
+            <td><div class="rowActions">
+              <button class="rowBtn btn-email" title="Send Email"><img src="./Project Overview Trunky_files/email(1).svg"></button>
+              <button class="rowBtn btn-call"  title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+              <button class="rowBtn btn-tick"  title="Tick — advancing" onclick="openTick('Bridge Career Drivers — Learning Technologies Group')">
+                <svg viewBox="0 0 24 24"><path fill="#fff" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+              </button>
+              <button class="rowBtn btn-skull" title="Dead Project"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+            </div></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /lane-cold -->
+
+  <!-- ════════════════════════════════════════════════
+       PIPELINE LANE
+  ════════════════════════════════════════════════ -->
+  <div class="sectionLabel" style="margin-top:24px;">Pipeline — Ticked Orders</div>
+
+  <div class="lane lane-green open" id="lane-pipeline">
+    <div class="laneHeader" onclick="toggleLane('lane-pipeline')">
+      <svg style="width:20px;height:20px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+      <span>Pipeline</span>
+      <span class="laneBadge">3</span>
+      <span class="pipelineSummary">Advancing orders · Raw: <strong>£2,647</strong> · Weighted: <strong>£1,853</strong></span>
+      <span class="laneChevron">▾</span>
+    </div>
+    <div class="laneBody">
+
+      <!-- Tab switcher -->
+      <div class="pipelineToggle">
+        <div class="pipelineTab active" onclick="switchPipelineTab('Task',this)">Task View</div>
+        <div class="pipelineTab" onclick="switchPipelineTab('Forecast',this)">Forecast View</div>
+      </div>
+
+      <!-- ── TASK VIEW ── -->
+      <div class="pipelineViewPanel active" id="pipelineTask">
+
+        <div class="monthGroupHeader">February 2026</div>
+        <table class="laneTable">
+          <thead><tr>
+            <th>Project</th><th>Client</th><th class="centre">By</th>
+            <th class="centre">Avg Price</th><th class="centre">Expected Order</th>
+            <th>Note</th><th class="centre">Actions</th>
+          </tr></thead>
+          <tbody>
+            <tr class="laneRow" style="background:#fff8f8;">
+              <td><a class="projectLink" href="#">CEO Decision Deck</a></td>
+              <td class="clientName">Financial Growth Academy</td>
+              <td class="centre"><img class="tickedByIcon" src="./Project Overview Trunky_files/41.svg" title="Rob ticked this"></td>
+              <td class="centre priceCell">£848</td>
+              <td class="centre days-bad">24 Feb 2026 <span class="overdueBadge">OVERDUE</span></td>
+              <td style="font-size:12px;color:#555;font-style:italic;">"Budget approved — chasing artwork from client"</td>
+              <td><div class="rowActions">
+                <button class="rowBtn btn-call" title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+                <button class="rowBtn btn-won"  title="Order Placed — Mark Won">
+                  <svg viewBox="0 0 24 24"><path fill="#1EADAD" d="M19,3H5C3.89,3 3,3.89 3,5V9H5V5H19V19H5V15H3V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M10.08,15.58L11.5,17L16.5,12L11.5,7L10.08,8.41L12.67,11H3V13H12.67L10.08,15.58Z"/></svg>
+                </button>
+                <button class="rowBtn btn-skull" title="Collapsed — dead after tick"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="monthGroupHeader">March 2026</div>
+        <table class="laneTable">
+          <thead><tr>
+            <th>Project</th><th>Client</th><th class="centre">By</th>
+            <th class="centre">Avg Price</th><th class="centre">Expected Order</th>
+            <th>Note</th><th class="centre">Actions</th>
+          </tr></thead>
+          <tbody>
+            <tr class="laneRow">
+              <td><a class="projectLink" href="#">The Clear Path</a></td>
+              <td class="clientName">Deborah Auguste</td>
+              <td class="centre"><img class="tickedByIcon" src="./Project Overview Trunky_files/2.svg" title="Mel ticked this"></td>
+              <td class="centre priceCell">£928</td>
+              <td class="centre days-ok">18 Mar 2026</td>
+              <td style="font-size:12px;color:#555;font-style:italic;">"Awaiting final artwork from designer — confirmed ordering"</td>
+              <td><div class="rowActions">
+                <button class="rowBtn btn-call" title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+                <button class="rowBtn btn-won"  title="Order Placed — Mark Won">
+                  <svg viewBox="0 0 24 24"><path fill="#1EADAD" d="M19,3H5C3.89,3 3,3.89 3,5V9H5V5H19V19H5V15H3V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M10.08,15.58L11.5,17L16.5,12L11.5,7L10.08,8.41L12.67,11H3V13H12.67L10.08,15.58Z"/></svg>
+                </button>
+                <button class="rowBtn btn-skull" title="Collapsed — dead after tick"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+              </div></td>
+            </tr>
+            <tr class="laneRow" style="background:#f9fff4;">
+              <td><a class="projectLink" href="#">PAN</a></td>
+              <td class="clientName">Menter</td>
+              <td class="centre"><img class="tickedByIcon" src="./Project Overview Trunky_files/2.svg" title="Mel ticked this"></td>
+              <td class="centre priceCell">£871</td>
+              <td class="centre days-ok">28 Mar 2026</td>
+              <td style="font-size:12px;color:#555;font-style:italic;">"Very happy with test pack — ordering end of March, needs invoice"</td>
+              <td><div class="rowActions">
+                <button class="rowBtn btn-call" title="Call"><img src="./Project Overview Trunky_files/call.svg"></button>
+                <button class="rowBtn btn-won"  title="Order Placed — Mark Won">
+                  <svg viewBox="0 0 24 24"><path fill="#1EADAD" d="M19,3H5C3.89,3 3,3.89 3,5V9H5V5H19V19H5V15H3V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M10.08,15.58L11.5,17L16.5,12L11.5,7L10.08,8.41L12.67,11H3V13H12.67L10.08,15.58Z"/></svg>
+                </button>
+                <button class="rowBtn btn-skull" title="Collapsed — dead after tick"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8,15A2,2 0 0,1 6,13A2,2 0 0,1 8,11A2,2 0 0,1 10,13A2,2 0 0,1 8,15M10.5,17L12,14L13.5,17H10.5M16,15A2,2 0 0,1 14,13A2,2 0 0,1 16,11A2,2 0 0,1 18,13A2,2 0 0,1 16,15M22,11A10,10 0 0,0 12,1A10,10 0 0,0 2,11C2,13.8 3.2,16.3 5,18.1V22H19V18.1C20.8,16.3 22,13.8 22,11M17,20H15V18H13V20H11V18H9V20H7V17.2C5.2,15.7 4,13.5 4,11A8,8 0 0,1 12,3A8,8 0 0,1 20,11C20,13.5 18.8,15.8 17,17.2V20Z"/></svg></button>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div><!-- /pipelineTask -->
+
+      <!-- ── FORECAST VIEW ── -->
+      <div class="pipelineViewPanel" id="pipelineForecast">
+        <table class="forecastTable">
+          <thead><tr>
+            <th>Month</th><th>Count</th>
+            <th class="right">Potential Revenue</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>February 2026</strong></td>
+              <td>1 Project</td>
+              <td class="right">£848</td>
+            </tr>
+            <tr>
+              <td><strong>March 2026</strong></td>
+              <td>2 Projects</td>
+              <td class="right">£1,799</td>
+            </tr>
+            <tr class="forecastTotalRow">
+              <td>Total</td>
+              <td>3 Projects</td>
+              <td class="right">£2,647</td>
+            </tr>
+          </tbody>
+        </table>
+      </div><!-- /pipelineForecast -->
+
+    </div>
+  </div><!-- /lane-pipeline -->
+
+</div><!-- /funnelWrap -->
+</main>
+
+<!-- ══════════ TICK MODAL ══════════ -->
+<div class="modalOverlay" id="tickModal" onclick="closeTickOnOverlay(event)">
+  <div class="modalBox">
+    <button class="modalClose" onclick="closeTick()">✕</button>
+    <h3>✅ Order Advancing</h3>
+    <div class="modalProjectName" id="tickProjectName">Project — Client</div>
+
+    <label>Expected Order Date</label>
+    <input type="date" id="tickDate" value="2026-03-15">
+
+    <label>Quick Note</label>
+    <div class="notePresets">
+      <span class="notePreset" onclick="selectPreset(this,'Artwork revision pending from client')">Artwork revision pending</span>
+      <span class="notePreset" onclick="selectPreset(this,'Awaiting client sign-off on proof')">Awaiting sign-off</span>
+      <span class="notePreset" onclick="selectPreset(this,'Client confirmed ordering — needs invoice')">Confirmed — needs invoice</span>
+      <span class="notePreset" onclick="selectPreset(this,'Will order after payday / end of month')">After payday</span>
+      <span class="notePreset" onclick="selectPreset(this,'Comparing with competitor — following up')">Comparing prices</span>
+      <span class="notePreset" onclick="selectPreset(this,'On hold by client request — re-check in 2 weeks')">On hold</span>
+    </div>
+    <textarea id="tickNote" placeholder="Or type your own note here…"></textarea>
+
+    <div class="modalActions">
+      <button class="modalBtn modalBtn-cancel" onclick="closeTick()">Cancel</button>
+      <button class="modalBtn modalBtn-confirm" onclick="confirmTick()">Save &amp; Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SCRIPTS ══════════ -->
+<script>
+
+/* Live clock */
+(function tick() {
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2,'0');
+    var m = String(now.getMinutes()).padStart(2,'0');
+    var s = String(now.getSeconds()).padStart(2,'0');
+    var el = document.getElementById('clockTime');
+    if (el) el.textContent = h + ':' + m + ':' + s;
+    setTimeout(tick, 1000);
+})();
+
+/* Lane accordion */
+function toggleLane(id) {
+    document.getElementById(id).classList.toggle('open');
+}
+
+/* Date quick-bar */
+function setRange(btn, days) {
+    document.querySelectorAll('.dateQuickBtn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('customDateWrap').classList.remove('visible');
+}
+function setRangeCustom(btn) {
+    document.querySelectorAll('.dateQuickBtn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('customDateWrap').classList.toggle('visible');
+}
+
+/* Pipeline tab switcher */
+function switchPipelineTab(view, tab) {
+    document.querySelectorAll('.pipelineTab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.pipelineViewPanel').forEach(function(p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('pipeline' + view).classList.add('active');
+}
+
+/* Tick dialog */
+function openTick(name) {
+    document.getElementById('tickProjectName').textContent = name;
+    document.getElementById('tickNote').value = '';
+    document.querySelectorAll('.notePreset').forEach(function(p) { p.classList.remove('selected'); });
+    document.getElementById('tickModal').classList.add('open');
+}
+function closeTick() {
+    document.getElementById('tickModal').classList.remove('open');
+}
+function closeTickOnOverlay(e) {
+    if (e.target === document.getElementById('tickModal')) closeTick();
+}
+function selectPreset(el, text) {
+    document.querySelectorAll('.notePreset').forEach(function(p) { p.classList.remove('selected'); });
+    el.classList.add('selected');
+    document.getElementById('tickNote').value = text;
+}
+function confirmTick() {
+    var proj = document.getElementById('tickProjectName').textContent;
+    var date = document.getElementById('tickDate').value;
+    var note = document.getElementById('tickNote').value || '(no note)';
+    alert('Task created!\n\n' + proj + '\nExpected: ' + date + '\nNote: ' + note + '\n\n[In production this saves to the task system and adds the project to the Pipeline lane]');
+    closeTick();
+}
+
+</script>
+</body></html>
