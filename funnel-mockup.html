@@ -250,10 +250,79 @@
     text-transform: uppercase; letter-spacing: 0.06em;
     padding: 18px 0 6px;
 }
+
+/* ── SIMPLE PASSWORD GATE ──────────────────────────────────── */
+body.auth-locked { overflow: hidden; }
+body.auth-locked header,
+body.auth-locked nav,
+body.auth-locked main { display: none; }
+
+.authGate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--background-colour);
+  z-index: 20000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+body.auth-locked .authGate { display: flex; }
+
+.authCard {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--lightgrey-colour);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0,0,0,.12);
+  padding: 24px;
+}
+.authCard h2 { margin: 0 0 8px; font-size: 22px; }
+.authCard p { margin: 0 0 14px; color: var(--grey-colour); font-size: 13px; }
+
+.authInputRow { display: flex; gap: 8px; }
+.authInput {
+  flex: 1;
+  border: 1px solid var(--grey-colour);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: montserrat;
+  font-size: 14px;
+}
+.authBtn {
+  border: none;
+  border-radius: 4px;
+  background: var(--green-colour);
+  color: #fff;
+  padding: 8px 14px;
+  font-family: montserrat;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.authError {
+  display: none;
+  margin-top: 10px;
+  color: #DC0000;
+  font-size: 12px;
+}
 </style>
 </head>
 
-<body data-view="customerprojects/project_list" class="lightMode" cz-shortcut-listen="true">
+<body data-view="customerprojects/project_list" class="lightMode auth-locked" cz-shortcut-listen="true">
+
+<div class="authGate" id="authGate">
+  <div class="authCard">
+    <h2>Trunky Access</h2>
+    <p>Enter password to view Sales Funnel.</p>
+    <div class="authInputRow">
+      <input id="gatePassword" class="authInput" type="password" placeholder="Password" autocomplete="off">
+      <button class="authBtn" onclick="tryUnlock()">Enter</button>
+    </div>
+    <div class="authError" id="gateError">Incorrect password. Try again.</div>
+  </div>
+</div>
 
 <!-- ══════════ HEADER ══════════ -->
 <header>
@@ -860,6 +929,40 @@
 <!-- ══════════ SCRIPTS ══════════ -->
 <script>
 
+function initAuthGate() {
+  var unlocked = sessionStorage.getItem('trunkyUnlocked') === '1';
+  if (unlocked) {
+    document.body.classList.remove('auth-locked');
+    return;
+  }
+
+  var pwdInput = document.getElementById('gatePassword');
+  if (pwdInput) {
+    pwdInput.focus();
+    pwdInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') tryUnlock();
+    });
+  }
+}
+
+function tryUnlock() {
+  var pwdInput = document.getElementById('gatePassword');
+  var error = document.getElementById('gateError');
+  if (!pwdInput || !error) return;
+
+  if (pwdInput.value === 'trunky') {
+    sessionStorage.setItem('trunkyUnlocked', '1');
+    document.body.classList.remove('auth-locked');
+    error.style.display = 'none';
+    pwdInput.value = '';
+    return;
+  }
+
+  error.style.display = 'block';
+  pwdInput.focus();
+  pwdInput.select();
+}
+
 /* Live clock */
 (function tick() {
     var now = new Date();
@@ -921,6 +1024,8 @@ function confirmTick() {
     alert('Task created!\n\n' + proj + '\nExpected: ' + date + '\nNote: ' + note + '\n\n[In production this saves to the task system and adds the project to the Pipeline lane]');
     closeTick();
 }
+
+initAuthGate();
 
 </script>
 </body></html>
